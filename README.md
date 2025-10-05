@@ -4,7 +4,7 @@ KAWA is a preset for the Moodle activity database.
 
 ## Description
 
-Users can create a KAWA. A KAWA is an association method developed by Vera Birkenbihl.
+Users can create a KAWA. KAWA is a method developed by Vera F. Birkenbihl.
 
 ## Getting started
 
