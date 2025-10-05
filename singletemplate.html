@@ -1,0 +1,79 @@
+<div class="containerKAWA">
+<div class="kawa-instance" id="fullscreen_kawa">
+
+        <div class="input-section" style="display:none">
+            <input type="text" id="##id##mainWord" placeholder="Wort eingeben..." disabled>
+        </div> <div class="buttons" style="float: right"> 
+            <button type="button" class="btn-export btn btn-light" onclick="exportSVG()">SVG</button>      <button type="button" class="btn btn-light toggle-fullscreen-btn" onclick="togglePresentationMode()" title="Präsentationsmodus"><i
+                        class="fa-solid fa-person-chalkboard"></i></button>##actionsmenu## 
+        </div>      
+ <div style="display: flex; flex-direction: row; flex-wrap: wrap;gap: 20px;">
+                <span>##userpicture##</span><h3>##user##</h3>  </div>
+
+
+     <div id="preview_##id##"></div>
+
+
+        <div class="config-section" style="display: none;">
+            <label for="##id##">Konfiguration (JSON):</label>
+<input class="basefieldinput form-control d-inline mod-data-input" type="text" name="##id##" id="##id##" value='[[code]]'>
+        </div>
+
+<p>KAWA - zuletzt geändert: ##timemodified##</p>
+<p>##comments##</p>
+   
+
+ </div>
+</div>
+
+    <script>
+ 
+        let currentWord = '';
+        let associations = {};
+        let letterColors = {};
+        let currentTemplate = 'horizontal';
+        let currentColorPalettloadConfigFromStringe = 'default';
+        let activeInputIndex = null;
+
+        const mainWordInput = document.getElementById('##id##mainWord');
+        const configInput = document.getElementById('##id##')
+        function getNumVisible() {
+            return currentWord.replace(/[^A-ZÄÖÜ]/g, '').length;
+        }
+
+        function updatePreview() {
+            const preview = document.getElementById('preview_##id##');
+            if (!currentWord.trim()) {
+                preview.innerHTML = '<p style="text-align: center; padding: 50px; color: #999;">Deine KAWA erscheint hier...</p>';
+                return;
+            }
+            const svg = generateSVG(false);
+            preview.innerHTML = svg;
+        }
+
+function togglePresentationMode() {
+    const fsContainer = document.getElementById("fullscreen_kawa");
+    const toggleButton = document.querySelector('.toggle-fullscreen-btn');
+
+    if (fsContainer.classList.contains('fullscreen-mode')) {
+        // Modus beenden
+        fsContainer.classList.remove('fullscreen-mode');
+    } else {
+        // Modus starten
+        fsContainer.classList.add('fullscreen-mode');
+     }
+}       
+
+       document.addEventListener('DOMContentLoaded', () => {
+            const initialValue = configInput.value.trim();
+            if (initialValue) {
+                try {
+                    loadConfigFromString(initialValue);
+                } catch (e) {
+                    console.error('Fehler beim Laden der initialen Konfiguration:', e);
+                    alert('Fehler beim Laden der initialen Konfiguration: Ungültiges JSON.');
+                }
+            }
+        });
+ 
+    </script>

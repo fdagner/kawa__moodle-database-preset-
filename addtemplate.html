@@ -1,0 +1,248 @@
+    <div class="containerKAWA">
+        <div class="input-section">
+            <input type="text" id="mainWord" placeholder="Wort eingeben..." maxlength="40">
+        </div>
+       <div class="template-selector">
+            <button type="button" class="template-btn btn btn-light active" data-template="horizontal" onclick="selectTemplate('horizontal')">➡️ Horizontal</button>
+            <button type="button" class="template-btn btn btn-light" data-template="vertical" onclick="selectTemplate('vertical')">⬇️ Vertikal</button>
+        </div>
+        <div class="palette-selector">
+            <button type="button" class="palette-btn btn btn-light active" data-palette="default" onclick="selectPalette('default')">Standard</button>
+            <button type="button" class="palette-btn btn btn-light" data-palette="cool" onclick="selectPalette('cool')">Kalt</button>
+            <button type="button" class="palette-btn btn btn-light" data-palette="warm" onclick="selectPalette('warm')">Warm</button>
+            <button type="button" class="palette-btn btn btn-light" data-palette="pastel" onclick="selectPalette('pastel')">Pastell</button>
+            <button type="button" class="palette-btn btn btn-light" data-palette="dark" onclick="selectPalette('dark')">Dunkel</button>
+      <button type="button" class="palette-btn btn btn-light" data-palette="dark" onclick="selectPalette('vera')">Vera</button>
+      <button type="button" class="palette-btn btn btn-light" data-palette="dark" onclick="selectPalette('nature')">Natur</button>
+      <button type="button" class="palette-btn btn btn-light" data-palette="dark" onclick="selectPalette('retro')">Retro</button>
+      <button type="button" class="palette-btn btn btn-light" data-palette="dark" onclick="selectPalette('neon')">Neon</button>
+      <button type="button" class="palette-btn btn btn-light" data-palette="dark" onclick="selectPalette('monochrome')">Monochrom</button>
+        </div>
+
+       
+        <div id="preview"></div>
+ <div class="buttons">
+          <button type="button" class="btn-clear btn btn-light" onclick="clearAll()">Neu starten</button>
+        </div>
+        <div id="inputModal" class="modal">
+            <div class="modal-content">
+                <h3><span id="modalLetter"></span></h3>
+                <input type="text" id="modalInput" placeholder="Assoziation eingeben..." maxlength="140">
+                <div>
+                         <button type="button" class="btn btn-secondary" onclick="closeModal()">Abbrechen</button>
+                    <button type="button" class="btn btn-success" onclick="saveModalInput()">Speichern</button>           </div>
+            </div>
+        </div>
+
+        
+        <div class="config-section" style="display: none;">
+            <label for="[[code#id]]">Konfiguration (JSON):</label>
+          [[code]]
+        </div>
+    </div>
+
+    <script>
+       
+        let currentWord = '';
+        let associations = {};
+        let letterColors = {};
+        let currentTemplate = 'horizontal';
+        let currentColorPalette = 'default';
+        let activeInputIndex = null;
+
+        const mainWordInput = document.getElementById('mainWord');
+        const configInput = document.getElementById('[[code#id]]');
+        const modal = document.getElementById('inputModal');
+        const modalInput = document.getElementById('modalInput');
+        const modalLetter = document.getElementById('modalLetter');
+
+        function getNumVisible() {
+            return currentWord.replace(/[^A-ZÄÖÜ0-9.,!?;:()\-\u2026]/g, '').length;
+        }
+
+        function debounce(func, delay) {
+            let timeout;
+            return function () {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => func.apply(this, arguments), delay);
+            };
+        }
+
+    
+
+        function autoSaveConfig() {
+            const config = {
+                currentWord,
+                associations,
+                letterColors,
+                currentTemplate,
+                currentColorPalette
+            };
+            configInput.value = JSON.stringify(config);
+        }
+
+        configInput.addEventListener('input', debounce(function () {
+            const val = this.value.trim();
+            if (val) {
+                try {
+                    JSON.parse(val);
+                    loadConfigFromString(val);
+                } catch (e) {
+                    console.error('Fehler beim Laden der Konfiguration:', e);
+                }
+            }
+        }, 500));
+
+  mainWordInput.addEventListener('input', function () {
+    currentWord = this.value.toUpperCase().replace(/[^A-ZÄÖÜ0-9\s.,!?;:()\-\u2026]/g, '');
+    this.value = currentWord;
+    activeInputIndex = null;
+    // Update letterColors for all visible letters
+    const palette = colorPalettes[currentColorPalette];
+    const numVisible = getNumVisible();
+    const newLetterColors = {};
+    for (let i = 0; i < numVisible; i++) {
+        // Preserve existing colors if available, otherwise assign from palette
+        newLetterColors[i] = letterColors[i] || palette[i % palette.length];
+    }
+    letterColors = newLetterColors;
+    updatePreview();
+    autoSaveConfig();
+});
+
+        function selectTemplate(template) {
+            currentTemplate = template;
+            document.querySelectorAll('.template-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            updatePreview();
+            autoSaveConfig();
+        }
+
+        function selectPalette(pal) {
+            currentColorPalette = pal;
+            document.querySelectorAll('.palette-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            const palette = colorPalettes[currentColorPalette];
+            const numVisible = getNumVisible();
+            for (let i = 0; i < numVisible; i++) {
+                letterColors[i] = palette[i % palette.length];
+            }
+            updatePreview();
+            autoSaveConfig();
+        }
+
+        function validateAssociationInput(value) {
+            const htmlTagPattern = /<[a-zA-Z][^>]*>|['"]/g;
+            return !htmlTagPattern.test(value);
+        }
+
+        function updateAssociation(index, value, inputElement) {
+            const previousValue = associations[index] || '';
+            value = value.trim();
+            if (!validateAssociationInput(value)) {
+                inputElement.classList.add('invalid');
+                inputElement.title = "Keine HTML-Tags oder Anführungszeichen (' oder \") erlaubt!";
+                alert("Ungültige Eingabe! HTML-Tags sowie einfache (') und doppelte (\") Anführungszeichen sind nicht erlaubt.");
+                inputElement.value = previousValue;
+                return false;
+            } else {
+                inputElement.classList.remove('invalid');
+                inputElement.title = '';
+                if (value) {
+                    associations[index] = value;
+                } else {
+                    delete associations[index];
+                }
+                updatePreview();
+                autoSaveConfig();
+                return true;
+            }
+        }
+
+        function openModal(index, letter) {
+            activeInputIndex = index;
+            modalLetter.textContent = letter;
+            modalInput.value = associations[index] || '';
+            modal.style.display = 'block';
+            modalInput.focus();
+            modalInput.select();
+
+            modalInput.oninput = () => {
+                const value = modalInput.value;
+                if (!validateAssociationInput(value)) {
+                    modalInput.classList.add('invalid');
+                    modalInput.title = "Keine HTML-Tags oder Anführungszeichen (' oder \") erlaubt!";
+                } else {
+                    modalInput.classList.remove('invalid');
+                    modalInput.title = '';
+                }
+                if (value.length > 140) {
+                    modalInput.value = value.slice(0, 140);
+                }
+            };
+modalInput.onkeydown = (e) => {
+if (e.key === 'Enter') {
+    e.preventDefault();
+      return;
+                }
+            };
+        }
+
+        function saveModalInput() {
+            if (updateAssociation(activeInputIndex, modalInput.value, modalInput)) {
+                closeModal();
+            }
+        }
+
+        function closeModal() {
+            modal.style.display = 'none';
+            activeInputIndex = null;
+            modalInput.value = '';
+            modalInput.classList.remove('invalid');
+            modalInput.title = '';
+            updatePreview();
+        }
+
+
+        function updatePreview() {
+            const preview = document.getElementById('preview');
+            if (!currentWord.trim()) {
+                preview.innerHTML = '<p style="text-align: center; padding: 50px; color: #999;">Deine KAWA erscheint hier...</p>';
+                return;
+            }
+            const svg = generateSVG(false);
+            preview.innerHTML = svg;
+        }
+   
+
+        function clearAll() {
+            if (confirm('Alles löschen und neu starten?')) {
+                currentWord = '';
+                associations = {};
+                letterColors = {};
+                currentColorPalette = 'default';
+                currentTemplate = 'horizontal';
+                activeInputIndex = null;
+                mainWordInput.value = '';
+                document.querySelectorAll('.template-btn').forEach(btn => btn.classList.remove('active'));
+                document.querySelector('.template-btn[data-template="horizontal"]').classList.add('active');
+                document.querySelectorAll('.palette-btn').forEach(btn => btn.classList.remove('active'));
+                document.querySelector('.palette-btn[data-palette="default"]').classList.add('active');
+                updatePreview();
+                configInput.value = '';
+                localStorage.removeItem('kawaConfig');
+                closeModal();
+            }
+        }
+       document.addEventListener('DOMContentLoaded', () => {
+            const initialValue = configInput.value.trim();
+            if (initialValue) {
+                try {
+                    loadConfigFromString(initialValue);
+                } catch (e) {
+                    console.error('Fehler beim Laden der initialen Konfiguration:', e);
+                    alert('Fehler beim Laden der initialen Konfiguration: Ungültiges JSON.');
+                }
+            }
+        });
+    </script>

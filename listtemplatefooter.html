@@ -1,0 +1,323 @@
+</div><script>
+// Speichert die Zustände für jede Instanz
+const kawaInstances = {};
+
+// Initialisiert eine KAWA-Instanz
+function initializeKawa(instanceId) {
+    const instance = {
+        currentWord: '',
+        associations: {},
+        letterColors: {},
+        currentTemplate: 'horizontal',
+        currentColorPalette: 'default',
+        mainWordInput: document.getElementById(`mainWord_${instanceId}`),
+        configInput: document.getElementById(`config_${instanceId}`),
+        preview: document.getElementById(`preview_${instanceId}`)
+    };
+
+    if (!instance.mainWordInput || !instance.configInput || !instance.preview) {
+        console.error(`Fehlende DOM-Elemente für Instanz ${instanceId}`);
+        return;
+    }
+
+    kawaInstances[instanceId] = instance;
+
+    // Konfiguration laden
+    instance.loadConfigFromString = function(jsonString) {
+        try {
+            const config = JSON.parse(jsonString);
+            instance.currentWord = config.currentWord || '';
+            instance.associations = config.associations || {};
+            instance.letterColors = config.letterColors || {};
+            instance.currentTemplate = config.currentTemplate || 'horizontal';
+            instance.currentColorPalette = config.currentColorPalette || 'default';
+
+            instance.mainWordInput.value = instance.currentWord;
+            instance.updatePreview();
+        } catch (e) {
+            console.error(`Fehler beim Laden der Konfiguration für Instanz ${instanceId}:`, e);
+            alert(`Fehler beim Laden der Konfiguration für Instanz ${instanceId}: Ungültiges JSON.`);
+        }
+    };
+
+    // Vorschau aktualisieren
+    instance.updatePreview = function() {
+        if (!instance.currentWord.trim()) {
+            instance.preview.innerHTML = '<p style="text-align: center; padding: 50px; color: #999;">Deine KAWA erscheint hier...</p>';
+            return;
+        }
+        const svg = instance.generateSVG(false);
+        instance.preview.innerHTML = svg;
+    };
+
+    // SVG generieren
+    instance.generateSVG = function(forExport) {
+        const fullString = instance.currentWord;
+        const minSpacing = 120;
+        const minPadding = 150;
+        const boxWidth = 45;
+
+        let svgWidth, svgHeight, centerX, centerY;
+        let spacing = minSpacing;
+
+        const words = fullString.split(' ').filter(w => w.length > 0);
+        const hasMultipleWords = words.length > 1;
+
+        let maxBubbleRy = 35;
+        if (instance.currentTemplate === 'vertical') {
+            let visibleIndex = 0;
+            for (let i = 0; i < fullString.length; i++) {
+                if (fullString[i] === ' ') continue;
+                const assoc = instance.associations[visibleIndex] || '';
+                if (assoc) {
+                    const maxBubbleWidth = 211;
+                    let bubbleWidth = Math.max(150, assoc.length * 10);
+                    bubbleWidth = Math.min(bubbleWidth, maxBubbleWidth);
+                    const lines = wrapText(assoc, bubbleWidth, 16);
+                    const numLines = lines.length;
+                    const lineHeight = 20;
+                    const textHeight = numLines * lineHeight;
+                    const padding = 25;
+                    const bubbleRy = Math.max(35, (textHeight / 2) + padding);
+                    maxBubbleRy = Math.max(maxBubbleRy, bubbleRy);
+                }
+                visibleIndex++;
+            }
+            spacing = Math.max(minSpacing, maxBubbleRy * 2);
+        }
+
+        const rowSpacing = 400;
+        const rowSpacingV = 700;
+
+        if (instance.currentTemplate === 'horizontal') {
+            const maxWordLength = Math.max(...words.map(w => w.length));
+            const totalCenterSpan = maxWordLength > 0 ? (maxWordLength - 1) * spacing : 0;
+            const minWidth = totalCenterSpan + boxWidth + 2 * minPadding;
+            svgWidth = Math.max(600, minWidth);
+            const neededHeight = words.length * rowSpacing + 2 * minPadding;
+            svgHeight = Math.max(400, neededHeight);
+            centerX = svgWidth / 2;
+            centerY = svgHeight / 2;
+        } else if (instance.currentTemplate === 'vertical') {
+            const maxWordLength = Math.max(...words.map(w => w.length));
+            const totalCenterSpan = maxWordLength > 0 ? (maxWordLength - 1) * spacing : 0;
+            const minHeight = totalCenterSpan + boxWidth + 2 * minPadding;
+            svgHeight = Math.max(800, minHeight);
+            const minWidth = hasMultipleWords ? (words.length * rowSpacingV + 2 * minPadding) : 1000;
+            svgWidth = Math.max(1000, minWidth);
+            centerX = svgWidth / 2;
+            centerY = svgHeight / 2;
+        }
+
+        let svgW = forExport ? svgWidth : '100%';
+        let svgH = forExport ? svgHeight : '100%';
+        let viewBox = forExport ? '' : `viewBox="0 0 ${svgWidth} ${svgHeight}"`;
+        let svgStyle = forExport ? 'background: white;' : 'background: white; width: 100%; height: auto;';
+
+        let svg = `<svg width="${svgW}" height="${svgH}" ${viewBox} xmlns="http://www.w3.org/2000/svg" style="${svgStyle}">`;
+
+        svg += `<defs><polygon points="0 0, 10 3, 0 6" fill="#333" /></defs>`;
+
+        const positions = getLayoutPositions(fullString, words, instance.currentTemplate, centerX, centerY, spacing, rowSpacing, rowSpacingV);
+
+        let visibleIndex = 0;
+        for (let i = 0; i < fullString.length; i++) {
+            if (fullString[i] === ' ') {
+                continue;
+            }
+            const pos = positions[i];
+            const assoc = instance.associations[visibleIndex] || '';
+
+            if (assoc) {
+                const color = instance.letterColors[visibleIndex];
+                const arrowLength = 150 + Math.random() * 40;
+                let bubbleX = pos.x + pos.arrowDx * arrowLength;
+                let bubbleY = pos.y + pos.arrowDy * arrowLength;
+
+                const maxBubbleWidth = 211;
+                let bubbleWidth = Math.max(150, assoc.length * 10);
+                bubbleWidth = Math.min(bubbleWidth, maxBubbleWidth);
+                const lines = wrapText(assoc, bubbleWidth, 16);
+                const numLines = lines.length;
+                const lineHeight = 20;
+                const textHeight = numLines * lineHeight;
+                const padding = 25;
+                let bubbleRy = Math.max(35, (textHeight / 2) + padding);
+
+                const mag = Math.sqrt(pos.arrowDx * pos.arrowDx + pos.arrowDy * pos.arrowDy);
+                let targetX = bubbleX;
+                let targetY = bubbleY;
+                if (mag > 0) {
+                    const unitDx = pos.arrowDx / mag;
+                    const unitDy = pos.arrowDy / mag;
+                    const rx = bubbleWidth / 2;
+                    const ry = bubbleRy;
+                    const denom = Math.sqrt((rx * unitDy) * (rx * unitDy) + (ry * unitDx) * (ry * unitDx));
+                    const radius = (rx * ry) / denom;
+                    targetX = bubbleX - unitDx * radius;
+                    targetY = bubbleY - unitDy * radius;
+                }
+
+                const dx = targetX - pos.x;
+                const dy = targetY - pos.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                const frac = 0.4;
+                let controlX = pos.x + dx * frac;
+                let controlY = pos.y + dy * frac;
+                if (dist > 0) {
+                    const unitPx = -dy / dist;
+                    const unitPy = dx / dist;
+                    const perpOffset = (Math.random() - 0.5) * 60;
+                    controlX += unitPx * perpOffset;
+                    controlY += unitPy * perpOffset;
+                }
+
+                svg += `<path d="M ${pos.x} ${pos.y} Q ${controlX} ${controlY} ${targetX} ${targetY}" 
+                        stroke="${color}" stroke-width="3" fill="none" 
+                        opacity="0.6"/>`;
+
+                svg += `
+                    <ellipse cx="${bubbleX}" cy="${bubbleY}" rx="${bubbleWidth / 2}" ry="${bubbleRy}" 
+                             fill="${color}" opacity="0.3" 
+                             stroke="${color}" stroke-width="2"/>`;
+
+                const startTextY = bubbleY - (textHeight / 2) + (lineHeight / 2);
+                svg += `
+                    <text x="${bubbleX}" y="${startTextY}" 
+                          text-anchor="middle" 
+                          font-family="sans-serif, cursive" 
+                          font-size="16" 
+                          fill="#333">`;
+                lines.forEach((line, idx) => {
+                    const lineY = startTextY + idx * lineHeight;
+                    if (idx === 0 && line.length > 0) {
+                        const firstChar = escapeXml(line.charAt(0));
+                        const rest = escapeXml(line.slice(1));
+                        svg += `
+                            <tspan x="${bubbleX}" y="${lineY}">
+                                <tspan font-weight="bold">${firstChar}</tspan>${rest}
+                            </tspan>`;
+                    } else {
+                        svg += `<tspan x="${bubbleX}" y="${lineY}">${escapeXml(line)}</tspan>`;
+                    }
+                });
+                svg += `</text>`;
+            }
+            visibleIndex++;
+        }
+
+        visibleIndex = 0;
+        for (let i = 0; i < fullString.length; i++) {
+            if (fullString[i] === ' ') continue;
+            const letter = fullString[i];
+            const pos = positions[i];
+            const color = instance.letterColors[visibleIndex];
+            const rotation = (Math.random() - 0.5) * 15;
+
+            svg += `
+                <g transform="translate(${pos.x}, ${pos.y}) rotate(${rotation})" class="letter-box-svg" onclick="openModal(${visibleIndex}, '${letter}', '${instanceId}')">
+                    <rect x="-22" y="-30" width="44" height="50" 
+                          rx="8" fill="${color}" 
+                          stroke="#333" stroke-width="3"/>
+                    <text x="0" y="5" 
+                          text-anchor="middle" 
+                          font-family="sans-serif, cursive" 
+                          font-size="40" 
+                          font-weight="bold" 
+                          fill="white"
+                          stroke="#333"
+                          stroke-width="1">${letter}</text>
+                </g>
+            `;
+            visibleIndex++;
+        }
+
+        svg += '</svg>';
+        return svg;
+    };
+
+    // Layout-Positionen berechnen
+    function getLayoutPositions(fullString, words, template, centerX, centerY, spacing, rowSpacing, rowSpacingV) {
+        const positions = [];
+        let charIndex = 0;
+
+        switch (template) {
+            case 'horizontal':
+                const baseY = words.length > 1 ? centerY - ((words.length - 1) * rowSpacing / 2) : centerY;
+
+                for (let wordIdx = 0; wordIdx < words.length; wordIdx++) {
+                    const word = words[wordIdx];
+                    const wordLength = word.length;
+                    const totalWordSpan = wordLength > 0 ? (wordLength - 1) * spacing : 0;
+                    const wordStartX = centerX - (totalWordSpan / 2);
+
+                    for (let i = 0; i < word.length; i++) {
+                        const x = wordStartX + i * spacing;
+                        const y = baseY + wordIdx * rowSpacing + (Math.random() - 0.5) * 60;
+                        const side = i % 2 === 0 ? -1 : 1;
+                        positions[charIndex] = {
+                            x: x,
+                            y: y,
+                            arrowDx: (Math.random() - 0.5) * 0.5,
+                            arrowDy: side
+                        };
+                        charIndex++;
+                    }
+                    charIndex++;
+                }
+                break;
+            case 'vertical':
+                const maxWordLengthV = Math.max(...words.map(w => w.length));
+                const totalSpanV = maxWordLengthV > 0 ? (maxWordLengthV - 1) * spacing : 0;
+                const baseStartY = centerY - (totalSpanV / 2);
+                const baseX = words.length > 1 ? centerX - ((words.length - 1) * rowSpacingV / 2) : centerX;
+
+                for (let wordIdx = 0; wordIdx < words.length; wordIdx++) {
+                    const word = words[wordIdx];
+                    const wordStartY = baseStartY;
+                    const wordX = baseX + wordIdx * rowSpacingV;
+
+                    for (let i = 0; i < word.length; i++) {
+                        const y = wordStartY + i * spacing;
+                        const x = wordX + (Math.random() - 0.5) * 100;
+                        const side = i % 2 === 0 ? -1 : 1;
+                        positions[charIndex] = {
+                            x: x,
+                            y: y,
+                            arrowDx: side,
+                            arrowDy: (Math.random() - 0.5) * 0.5
+                        };
+                        charIndex++;
+                    }
+                    charIndex++;
+                }
+                break;
+        }
+
+        return positions;
+    }
+   
+
+    // Initiale Konfiguration laden
+    const initialValue = instance.configInput.value.trim();
+    if (initialValue) {
+        instance.loadConfigFromString(initialValue);
+    } else {
+        console.warn(`Keine Konfiguration für Instanz ${instanceId} gefunden.`);
+    }
+}
+
+
+// Beim Laden der Seite alle KAWA-Instanzen initialisieren
+document.addEventListener('DOMContentLoaded', () => {
+    const instances = document.querySelectorAll('.kawa-instance');
+    console.log(`Gefundene Instanzen: ${instances.length}`);
+    instances.forEach(instance => {
+        const instanceId = instance.getAttribute('data-instance-id');
+        console.log(`Initialisiere Instanz ${instanceId}`);
+        initializeKawa(instanceId);
+    });
+});
+
+
+</script>

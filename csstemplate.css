@@ -1,0 +1,178 @@
+        .containerKAWA h1 {
+            color: #4a5568;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+            text-align: center;
+        }
+
+        .containerKAWA .input-section {
+            margin: 20px 0;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .containerKAWA input[type="text"] {
+            flex: 1;
+            min-width: 200px;
+            padding: 15px;
+            font-size: 1.2em;
+            border: 2px solid #e2e8f0;
+            border-radius: 15px;
+          }
+
+        .containerKAWA input[type="text"]:focus {
+            border-color: #a0aec0;
+            outline: none;
+        }
+
+        .containerKAWA .template-selector {
+            display: flex;
+            gap: 15px;
+            margin: 20px 0;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .containerKAWA .palette-selector {
+            display: flex;
+            gap: 15px;
+            margin: 20px 0;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+
+        .containerKAWA .letter-inputs {
+            margin: 20px 0;
+        }
+
+        .containerKAWA .letter-row {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+            align-items: center;
+        }
+
+        .containerKAWA .letter-box {
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8em;
+            font-weight: bold;
+            border-radius: 10px;
+            flex-shrink: 0;
+        }
+
+        .containerKAWA .assoc-input {
+            flex: 1;
+            padding: 10px;
+            font-size: 1.1em;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+        }
+
+        .containerKAWA .assoc-input:focus {
+            border-color: #a0aec0;
+            outline: none;
+        }
+
+        .containerKAWA .assoc-input.invalid {
+            border-color: #e53e3e;
+            background: #fff5f5;
+        }
+
+        .containerKAWA .buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+
+  
+        .containerKAWA .config-section {
+            margin-top: 20px;
+        }
+
+        .containerKAWA .config-section label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #4a5568;
+        }
+
+        .containerKAWA .config-section input {
+            width: 100%;
+            padding: 10px;
+            font-family: monospace;
+            font-size: 0.8em;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            box-sizing: border-box;
+        }
+
+        .containerKAWA .config-section input:focus {
+            border-color: #a0aec0;
+            outline: none;
+        }
+
+        .containerKAWA #preview {
+            margin-top: 30px;
+            border: 2px dashed #e2e8f0;
+            border-radius: 15px;
+            min-height: 200px;
+            background: #f7fafc;
+            width: 100%;
+            overflow: auto;
+        }
+
+      .containerKAWA .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); }
+     .containerKAWA .modal-content { background-color: #fff; margin: 15% auto; padding: 20px; border-radius: 8px; width: 80%; max-width: 400px; text-align: center; }
+      .containerKAWA .modal-content input { width: 100%; padding: 10px; font-size: 16px; margin-bottom: 10px; }
+    .containerKAWA .modal-content .invalid { border: 2px solid red; }
+     .containerKAWA .modal-content button { padding: 10px 20px; margin: 5px; }
+
+.action-menu .menubar {
+    float: right;
+}
+
+.kawa-instance {
+    margin-top: 10px;
+    margin-bottom: 20px;
+    display: inline-block;
+    border: none;
+    padding: 10px 14px;
+    font-size: 15px;
+    width: 95%;
+    margin-right: 8px;
+    color: #111827;
+    transition: all 0.25s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+    /* subtiler "Karten"-Effekt */
+}
+
+.letter-box-svg {
+        cursor: pointer;
+        transition: transform 0.2s ease;
+    }
+
+  /* Simulierter Fullscreen-Modus */
+    .fullscreen-mode {
+        position: fixed !important;
+        top: 0;
+        left: 0;
+        width: 100vw !important;
+        height: 100vh !important;
+        z-index: 9997;
+        background-color: #fff;
+        margin: 0;
+        padding: 0;
+        overflow: auto;
+    }
+
+#action-menu-toggle-2 {
+height: 50px;
+}
