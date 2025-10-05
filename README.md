@@ -8,7 +8,7 @@ Users can create a KAWA. KAWA is a method developed by Vera F. Birkenbihl.
 
 ## Getting started
 
-Download the [release file](https://github.com/fdagner/kawa__moodle-database-preset/releases). 
+Download the [release file](https://github.com/fdagner/kawa__moodle-database-preset-/releases). 
 Create a "Database" activity in Moodle and then upload the ZIP file.
 
 ## Language Support
