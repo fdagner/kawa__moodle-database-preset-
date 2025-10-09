@@ -1,7 +1,12 @@
     <div class="containerKAWA">
-        <div class="input-section">
-            <input type="text" id="mainWord" placeholder="Wort eingeben..." maxlength="40">
-        </div>
+<div class="input-section d-flex align-items-center">
+<i class="fas fa-question-circle text-primary fa-2x ms-2" 
+     data-bs-toggle="modal" 
+     data-bs-target="#hilfeModal"
+     style="cursor:pointer;"></i>  <input type="text" id="mainWord" class="form-control" 
+         placeholder="Wort eingeben..." maxlength="40">
+  
+</div>
        <div class="template-selector">
             <button type="button" class="template-btn btn btn-light active" data-template="horizontal" onclick="selectTemplate('horizontal')">➡️ Horizontal</button>
             <button type="button" class="template-btn btn btn-light" data-template="vertical" onclick="selectTemplate('vertical')">⬇️ Vertikal</button>
@@ -41,6 +46,25 @@
         </div>
     </div>
 
+
+<!-- Modal -->
+<div class="modal fade" id="hilfeModal" tabindex="-1" aria-labelledby="hilfeModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="hilfeModalLabel">Hilfe</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schließen"></button>
+      </div>
+      <div class="modal-body">
+        <p>Hier kannst du ein Wort eingeben und anschließend durch Klicken auf die einzelnen Buchstaben passende Assoziationen hinzufügen.</p>
+        <p>Beispiel: Wort <strong>Haus</strong> → H: Heimat, A: Abenteuer, U: Urlaub, S: Sonne.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Schließen</button>
+      </div>
+    </div>
+  </div>
+</div>
     <script>
        
         let currentWord = '';
